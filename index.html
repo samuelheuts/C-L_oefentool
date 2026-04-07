@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C&L Oefentool – Mondelinge Eindtoets</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f1117;--card:#181a24;--border:#2a2d3a;--text:#e8e8ec;--muted:#8a8ea0;--accent:#4a9eff}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:20px 16px}
+.wrap{max-width:720px;margin:0 auto}
+h1{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+.sub{font-size:14px;color:var(--muted);margin-top:4px}
+.tabs{display:flex;gap:4px;margin:24px 0;background:var(--card);border-radius:10px;padding:4px}
+.tabs button{flex:1;padding:10px;border-radius:8px;border:none;font-weight:600;font-size:14px;cursor:pointer;transition:.2s}
+.tabs .active{background:var(--accent);color:#fff}
+.tabs .inactive{background:transparent;color:var(--muted)}
+.card{background:var(--card);border-radius:12px;padding:24px;margin-bottom:20px;border:1px solid var(--border)}
+.label{font-size:13px;color:var(--accent);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.scenario{font-size:15px;line-height:1.6;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.val-box{background:var(--bg);border-radius:8px;padding:10px 12px;text-align:center}
+.val-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.val-num{font-size:18px;font-weight:700;font-family:'SF Mono',monospace}
+.val-ref{font-size:10px;color:var(--muted)}
+.abn{color:#e74c3c}
+.normal{color:var(--muted)}
+.btn{padding:10px 20px;border-radius:8px;border:2px solid var(--accent);font-weight:600;font-size:14px;cursor:pointer;transition:.2s}
+.btn-outline{background:transparent;color:var(--accent)}
+.btn-filled{background:var(--accent);color:#fff}
+.answer-box{margin-top:16px;padding:16px;background:var(--bg);border-radius:8px;border-left:4px solid var(--accent)}
+.answer-title{font-weight:700;color:var(--accent);margin-bottom:8px}
+.answer-text{font-size:14px;line-height:1.7;color:var(--muted)}
+.opening{background:var(--bg);border-radius:8px;padding:16px;margin-bottom:16px;border-left:4px solid var(--accent);font-size:16px;font-weight:600;line-height:1.6}
+.hint-btns{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.hint-btn{padding:8px 16px;border-radius:8px;border:2px solid;font-weight:600;font-size:13px;text-transform:capitalize;transition:.2s}
+.hint-content{margin-bottom:12px;padding:14px;background:var(--bg);border-radius:8px;animation:fadeIn .3s ease}
+.hint-label{font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.hint-text{font-size:14px;line-height:1.7}
+.notes{width:100%;min-height:80px;padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit;resize:vertical;margin-top:8px}
+.info{font-size:14px;color:var(--muted);margin-bottom:20px;line-height:1.6}
+.meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.counter{font-size:12px;color:var(--muted)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:500px){.grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>C&L Oefentool</h1>
+<p class="sub">Blok Circulatie & Longen · 3e jaars geneeskunde</p>
+<div class="tabs">
+<button id="tab-gas" class="active" onclick="showTab('gas')">Bloedgassen</button>
+<button id="tab-cases" class="inactive" onclick="showTab('cases')">Open Casussen</button>
+</div>
+<div id="gas-section"></div>
+<div id="cases-section" style="display:none"></div>
+</div>
+<script>
+const REF={pH:[7.35,7.45],pCO2:[4.7,6.0],HCO3:[22,26],pO2:[10.0,13.3],BE:[-2,2],SaO2:[95,100]};
+const REF_STR={pH:"7.35–7.45",pCO2:"4.7–6.0 kPa",HCO3:"22–26 mmol/L",pO2:"10.0–13.3 kPa",BE:"-2 tot +2",SaO2:"95–100%"};
+
+const GASES=[
+{scenario:"Man, 68 jaar, COPD GOLD III, al 3 dagen toenemend benauwd met productief hoesten. Saturatie 88%.",values:{pH:7.31,pCO2:7.8,HCO3:34,pO2:6.8,BE:8,SaO2:88},answer:"Respiratoire acidose, gedeeltelijk gecompenseerd (metabole compensatie).",explanation:"pH laag → acidose. pCO2 verhoogd → respiratoir. HCO3 verhoogd → nieren compenseren door bicarbonaat te retineren. Niet volledig gecompenseerd want pH nog steeds < 7.35. Past bij acute-on-chronic respiratoire insufficiëntie bij COPD-exacerbatie."},
+{scenario:"Vrouw, 24 jaar, diabetes type 1, braakt al 2 dagen, ruikt naar aceton, Kussmaul-ademhaling.",values:{pH:7.18,pCO2:2.1,HCO3:8,pO2:14.2,BE:-18,SaO2:99},answer:"Metabole acidose, gedeeltelijk gecompenseerd (respiratoire compensatie).",explanation:"pH zeer laag → ernstige acidose. HCO3 sterk verlaagd → metabool. pCO2 verlaagd → respiratoire compensatie (Kussmaul). Past bij diabetische ketoacidose: door insulinetekort kan glucose de cellen niet in, waardoor het lichaam vetten afbreekt. Hierbij ontstaan ketonlichamen (acetoacetaat, β-hydroxyboterzuur) die als zuren het bicarbonaat verbruiken. De anion gap zal verhoogd zijn."},
+{scenario:"Man, 45 jaar, paniekaanval, tintelingen in handen en rond de mond, duizelig.",values:{pH:7.52,pCO2:2.8,HCO3:24,pO2:14.0,BE:0,SaO2:99},answer:"Respiratoire alkalose, ongecompenseerd.",explanation:"pH hoog → alkalose. pCO2 laag → respiratoir (hyperventilatie). HCO3 normaal → (nog) geen renale compensatie. De tintelingen ontstaan doordat een lage pCO2 leidt tot cerebrale vasoconstrictie en veranderde zenuwprikkelbaarheid."},
+{scenario:"Vrouw, 72 jaar, hartfalen NYHA III, chronisch furosemide 80 mg/dag, braakt sinds gisteren.",values:{pH:7.51,pCO2:6.0,HCO3:38,pO2:9.5,BE:12,SaO2:93},answer:"Metabole alkalose, gedeeltelijk gecompenseerd (respiratoire compensatie).",explanation:"pH hoog → alkalose. HCO3 sterk verhoogd → metabool. pCO2 verhoogd → respiratoire compensatie (hypoventilatie). Mechanisme contractie-alkalose: furosemide zorgt voor verlies van NaCl en water via de urine, maar het bicarbonaat blijft achter → de resterende lichaamsvloeistof wordt relatief 'geconcentreerder' in bicarbonaat. Daarbovenop verliest de patiënt door het braken maagzuur (HCl), wat de alkalose verder verergert."},
+{scenario:"Man, 58 jaar, 2 uur geleden motorongeluk, nu in shock, bloeddruk 75/40, hartfrequentie 130.",values:{pH:7.22,pCO2:3.2,HCO3:12,pO2:11.0,BE:-14,SaO2:95},answer:"Metabole acidose, gedeeltelijk gecompenseerd (respiratoire compensatie).",explanation:"pH laag → acidose. HCO3 laag → metabool. pCO2 verlaagd → respiratoire compensatie. Past bij lactaatacidose door hypovolemische shock (anaërobe glycolyse door weefselhypoperfusie)."},
+{scenario:"Vrouw, 80 jaar, longembool rechts, tachypnoe (AF 28), thoracale pijn.",values:{pH:7.48,pCO2:3.0,HCO3:22,pO2:7.5,BE:-1,SaO2:90},answer:"Respiratoire alkalose, ongecompenseerd. Hypoxemie.",explanation:"pH hoog → alkalose. pCO2 laag → respiratoir (tachypnoe/hyperventilatie). HCO3 normaal → geen compensatie (acuut beeld). pO2 sterk verlaagd → hypoxemie. V/Q-mismatch bij longembolie veroorzaakt hypoxemie, reflectoir hyperventilatie leidt tot respiratoire alkalose."},
+{scenario:"Man, 55 jaar, chronisch nierfalen (GFR 12 ml/min), vermoeid, misselijk.",values:{pH:7.30,pCO2:3.8,HCO3:14,pO2:12.0,BE:-10,SaO2:97},answer:"Metabole acidose, gedeeltelijk gecompenseerd (respiratoire compensatie).",explanation:"pH laag → acidose. HCO3 laag → metabool. pCO2 licht verlaagd → respiratoire compensatie. Nieren kunnen H+ niet meer uitscheiden en HCO3 niet meer regenereren."},
+{scenario:"Vrouw, 30 jaar, postoperatief na laparoscopische cholecystectomie, oppervlakkige ademhaling door pijn, morfine gehad.",values:{pH:7.28,pCO2:8.5,HCO3:26,pO2:8.0,BE:1,SaO2:88},answer:"Respiratoire acidose, ongecompenseerd. Hypoxemie.",explanation:"pH laag → acidose. pCO2 sterk verhoogd → respiratoir. HCO3 normaal → geen compensatie (acuut). Acute hypoventilatie door pijn (splinting) en opioïd-effect. Beleid: pijnstilling optimaliseren, opioïd-antagonist overwegen bij ernstige ademdepressie."},
+{scenario:"Man, 35 jaar, ernstige astma-aanval, kan niet meer in zinnen praten, gebruik van hulpademhalingsspieren.",values:{pH:7.25,pCO2:7.5,HCO3:24,pO2:7.0,BE:0,SaO2:85},answer:"Respiratoire acidose, ongecompenseerd. Hypoxemie.",explanation:"pH laag → acidose. pCO2 sterk verhoogd → respiratoir. HCO3 normaal → geen compensatie (acuut). LET OP: bij astma is een normale of stijgende pCO2 een alarmsignaal! Bij een lichte astma-aanval is de pCO2 juist verlaagd (hyperventilatie). Een stijgende pCO2 betekent dat de patiënt uitgeput raakt en niet meer kan compenseren → dreigend respiratoir falen. Dit is een ICU-indicatie."},
+{scenario:"Vrouw, 62 jaar, ernstige sepsis bij urineweginfectie, koorts 39.5°C, bloeddruk 85/50, tachycardie.",values:{pH:7.20,pCO2:2.5,HCO3:10,pO2:10.5,BE:-16,SaO2:94},answer:"Metabole acidose, gedeeltelijk gecompenseerd (respiratoire compensatie).",explanation:"pH zeer laag → ernstige acidose. HCO3 sterk verlaagd → metabool. pCO2 sterk verlaagd → maximale respiratoire compensatie. Past bij lactaatacidose door septische shock: vasodilatatie en microvasculaire dysfunctie leiden tot weefselhypoxie ondanks een normaal pO2. Verhoogde anion gap door lactaat."},
+{scenario:"Man, 70 jaar, chronisch stabiel COPD GOLD II, komt voor reguliere controle, geen klachten.",values:{pH:7.38,pCO2:6.5,HCO3:30,pO2:9.5,BE:5,SaO2:94},answer:"Respiratoire acidose, volledig gecompenseerd. Lichte hypoxemie.",explanation:"pH normaal → gecompenseerd. pCO2 verhoogd → respiratoire component. HCO3 verhoogd → nieren compenseren volledig. Dit is het typische bloedgaspatroon bij stabiel COPD: chronische CO2-retentie met volledige renale compensatie. pH is genormaliseerd. Let op: bij deze patiënten is de 'normale' pCO2 dus al verhoogd."},
+{scenario:"Vrouw, 19 jaar, bulimia nervosa, braakt meerdere keren per dag, slap en duizelig.",values:{pH:7.50,pCO2:5.5,HCO3:34,pO2:12.5,BE:10,SaO2:98},answer:"Metabole alkalose, gedeeltelijk gecompenseerd (respiratoire compensatie).",explanation:"pH hoog → alkalose. HCO3 verhoogd → metabool. pCO2 licht verhoogd → respiratoire compensatie. Door chronisch braken verliest de patiënt maagzuur (HCl). Het lichaam houdt bicarbonaat vast om het chlorideverlies te compenseren. Daarnaast ontstaat hypokalemie doordat de nieren K+ uitscheiden in ruil voor H+-retentie, wat de alkalose in stand houdt."},
+
+{scenario:"Vrouw, 40 jaar, pulmonale arteriële hypertensie, toenemende dyspnoe bij inspanning, saturatiedaling bij lopen.",values:{pH:7.42,pCO2:3.8,HCO3:23,pO2:8.5,BE:-1,SaO2:91},answer:"Geen zuur-basestoornis. Hypoxemie.",explanation:"pH, pCO2 en HCO3 zijn alle drie normaal → geen zuur-basestoornis. Echter: pO2 is verlaagd → hypoxemie. Bij pulmonale hypertensie is de bloedflow door de longen verminderd door verhoogde weerstand in de pulmonale vaten. Dit leidt tot V/Q-mismatch en verminderde gasuitwisseling. In rust kan de saturatie nog acceptabel zijn, maar bij inspanning daalt deze snel."},
+
+];
+
+const CASES=[
+{opening:"Vrouw, 53 jaar, komt bij de huisarts met pijn op de borst sinds vanochtend.",category:"Cardiologie",hints:[
+{trigger:"anamnese",content:"De pijn zit retrosternaal, drukkend, straalt uit naar linkerarm en kaak, begonnen bij het traplopen, niet houdingsafhankelijk. Gestart 3 uur geleden, houdt aan in rust. Ze is misselijk. Rookt 20 sigaretten/dag, BMI 31, moeder had MI op 58-jarige leeftijd. Ze slikt geen medicatie."},
+{trigger:"lo",content:"BD 155/95, pols 92 regulair, saturatie 96%, temp 36.8°C. Auscultatie cor: geen souffles. Auscultatie longen: vesiculair ademgeruis bds, geen crepitaties. Perifeer: geen oedeem. Geen drukpijn thoraxwand."},
+{trigger:"ecg",content:"Sinusritme, 90/min. ST-elevatie in II, III, aVF (2-3 mm). Reciproke ST-depressie in I en aVL."},
+{trigger:"diagnose",content:"STEMI inferieur. Acuut coronair syndroom met totale occlusie, meest waarschijnlijk RCA. NB: bij STEMI wacht je niet op labwaarden — de diagnose staat op basis van kliniek + ECG."},
+{trigger:"beleid",content:"112 bellen, ambulance met MICU. In de ambulance: aspirine 300 mg, ticagrelor 180 mg, heparine. Direct naar de vaatkamer voor primaire PCI (deur-tot-ballon < 90 min). Pijnstilling: morfine IV bij persisterende pijn. Geen tijd verliezen met lab of opname — het ECG is voldoende."}]},
+
+{opening:"Man, 71 jaar, toenemende kortademigheid sinds 3 weken, kan niet meer plat liggen.",category:"Cardiologie / Kleplijden",hints:[
+{trigger:"anamnese",content:"Dyspnoe d'effort, progressief. Orthopnoe (slaapt op 3 kussens). Nycturie 3x/nacht. Enkels gezwollen 's avonds. Soms duizelig bij snel opstaan. Bekend met hypertensie (amlodipine 10 mg). Niet-roker."},
+{trigger:"lo",content:"BD 145/60, pols 78 regulair, saturatie 93%. Halsvenenstuwing. Ruwe systolische souffle gr. III/VI, 2e ICR rechts, uitstralend naar carotiden. Crepitaties basaal bds. Pitting oedeem enkels bds."},
+{trigger:"diagnostiek",content:"ECG: sinusritme, tekenen van linkerventrikel hypertrofie. X-thorax: cardiomegalie, stuwing, Kerley-B lijntjes. NT-proBNP: 4800 pg/mL. Echo cor: ernstige AS (AVA 0.7 cm², gem. gradiënt 48 mmHg, Vmax 4.5 m/s). LVEF 50%. Concentrische LVH."},
+{trigger:"diagnose",content:"Symptomatische ernstige aortaklepstenose met hartfalen. Drukoverbelasting → concentrische hypertrofie → diastolische dysfunctie → verhoogde vullingsdrukken → longstuwing."},
+{trigger:"beleid",content:"Diuretica voor symptoomverlichting. Hartteam: SAVR vs. TAVI. CT-aorta work-up. Coronairangiografie preoperatief. GEEN vasodilatoren bij ernstige AS."}]},
+
+{opening:"Man, 64 jaar, rookt 40 pack-years, komt met bloederig sputum sinds 2 weken.",category:"Longgeneeskunde / Oncologie",hints:[
+{trigger:"anamnese",content:"Hemoptoë: kleine hoeveelheden helderrood bloed bij het sputum. Gewichtsverlies 6 kg in 2 maanden. Hoest veranderd van karakter. Geen koorts. Lichte dyspnoe. 40 pack-years. Werkte vroeger met asbest."},
+{trigger:"lo",content:"BD 130/80, pols 76, saturatie 95%. Verminderd ademgeruis rechts bovenin. Geen lymfadenopathie cervicaal/supraclaviculair. Geen trommelstokvingers."},
+{trigger:"diagnostiek",content:"X-thorax: schaduw rechter bovenkwab. CT-thorax: centraal gelegen massa RBK (4.2 cm), mediastinale lymfadenopathie (station 4R en 7). Bronchoscopie: plaveiselcelcarcinoom. PET-CT: FDG-avide massa + klieren, geen afstandsmetastasen."},
+{trigger:"diagnose",content:"NSCLC (plaveiselcelcarcinoom), cT2aN2M0, stadium IIIA."},
+{trigger:"beleid",content:"MDO. Stadium IIIA met N2: concurrent chemoradiatie (cisplatine-etoposide + 60 Gy). Durvalumab consolidatie (PACIFIC). Longfunctie/VO2max beoordelen. Rookstop."}]},
+
+{opening:"Vrouw, 28 jaar, acuut zeer benauwd, pijn rechts in de borst, net terug van lange vliegreis.",category:"Longgeneeskunde / Spoedeisend",hints:[
+{trigger:"anamnese",content:"Acuut begin 2 uur geleden. Scherpe pijn rechts lateraal, pleuritisch. OAC-gebruik. Vlucht van 11 uur, gisteren geland. Licht benauwd. Geen hoest, koorts of hemoptoë."},
+{trigger:"lo",content:"BD 110/70, pols 108, saturatie 92%, AF 24. Longen: vesiculair bds. Geen tekenen DVT. Wells-score ≥ 5."},
+{trigger:"diagnostiek",content:"D-dimeer niet nodig (hoge Wells). CT-PA: saddle embolus bifurcatie AP, RV/LV-ratio > 1.0. Troponine 45 ng/L. NT-proBNP 890. Bloedgas: pH 7.47, pCO2 3.1, pO2 7.8, HCO3 22."},
+{trigger:"diagnose",content:"Acute longembolie, submassief (intermediair-hoog risico). Hemodynamisch stabiel met RV-belasting."},
+{trigger:"beleid",content:"Opname, monitoring. LMWH → DOAC. Bij verslechtering: trombolyse overwegen. OAC stoppen. Minimaal 3-6 maanden anticoagulatie."}]},
+
+{opening:"Man, 42 jaar, plots hevige scheurende pijn op de borst, uitstralend naar de rug.",category:"Cardiologie / Vasculair",hints:[
+{trigger:"anamnese",content:"Acuut begin 1 uur geleden. Scheurende pijn retrosternaal naar interscapulair. Maximale pijn direct bij begin. Zweterig, onrustig. Hypertensie (niet-compliant). Vader had 'gescheurde aorta' op 50-jarige leeftijd."},
+{trigger:"lo",content:"BD rechts 180/100, links 140/85 (verschil!). Pols 100. Saturatie 96%. Nieuw diastolisch souffletje over aortaklep. Geen perifere ischemie."},
+{trigger:"diagnostiek",content:"ECG: sinustachycardie, geen ST-afwijkingen. CTA aorta: dissectieflap in aorta ascendens tot in arcus. Intimascheur boven sinotubulaire junctie. Pericardvocht. AI."},
+{trigger:"diagnose",content:"Acute type A aortadissectie (Stanford A / DeBakey type I)."},
+{trigger:"beleid",content:"Spoedoperatie! Bloeddruk verlagen (esmolol IV, target <120 sys, HF <60). Supine ascendens vervanging ± Bentall. Zonder operatie: mortaliteit ~1-2% per uur."}]},
+
+{opening:"Vrouw, 22 jaar, sinds een uur toenemend benauwd, piepende ademhaling.",category:"Longgeneeskunde",hints:[
+{trigger:"anamnese",content:"Bekend met astma sinds kindertijd, gebruikt salbutamol bij klachten maar geen onderhoudsmedicatie. Vandaag op bezoek bij vriendin met kat. Progressief benauwd geworden. Piepen op de borst, hoesten, kan moeilijk uitademen. Geen koorts. Al 3x salbutamol gebruikt zonder voldoende effect."},
+{trigger:"lo",content:"BD 125/80, pols 110, saturatie 93%, AF 26, temp 36.5°C. Verlengd exspirium met diffuus expiratoir piepen bds. Gebruik van hulpademhalingsspieren (m. sternocleidomastoideus). Kan nog in korte zinnen praten. Geen cyanose."},
+{trigger:"diagnostiek",content:"Piekstroom (PEF): 45% van voorspeld. Bloedgas: pH 7.44, pCO2 4.0, pO2 9.0, HCO3 24. NB: een 'normale' pCO2 bij een ernstige astma-aanval is een alarmsignaal — normaal zou de patiënt hyperventileren (lage pCO2). Betekent dat ze niet meer kan compenseren."},
+{trigger:"diagnose",content:"Ernstige astma-exacerbatie (PEF <50%, gebruik hulpademhalingsspieren, onvoldoende respons op salbutamol). Trigger: allergeenexpositie (kat)."},
+{trigger:"beleid",content:"Salbutamol verneveling herhaald (5 mg) + ipratropium verneveling (500 µg). Prednisolon 40 mg oraal (of hydrocortison 100 mg IV). Zuurstof op geleide van saturatie (doel 94-98%). Bij onvoldoende respons: magnesiumsulfaat IV 2g over 20 min. Monitoring PEF en bloedgas. Bij stijgende pCO2 of uitputting: IC-opname, overweeg intubatie."}]},
+
+{opening:"Man, 66 jaar, al enkele maanden pijn op de borst bij het traplopen, gaat weer over in rust.",category:"Cardiologie",hints:[
+{trigger:"anamnese",content:"Retrosternale drukkende pijn bij inspanning (twee trappen, stevig wandelen), verdwijnt na 5 minuten rust. Geen pijn in rust. Rookt 30 jaar, gestopt 2 jaar geleden. Hypertensie (losartan 50 mg), hypercholesterolemie (atorvastatine 20 mg). Vader: MI op 61 jaar. BMI 28."},
+{trigger:"lo",content:"BD 142/88, pols 72 regulair, saturatie 98%. Auscultatie cor: regulair, geen souffles. Auscultatie longen: vesiculair bds. Perifeer: geen oedeem. Geen tekenen van hartfalen."},
+{trigger:"diagnostiek",content:"ECG in rust: sinusritme, geen ST-afwijkingen. Inspannings-ECG: horizontale ST-depressie van 2 mm in V4-V6 bij 100 Watt, passend bij induceerbare ischemie. CT-coronairen of coronairangiografie: significante stenose (75%) in de LAD."},
+{trigger:"diagnose",content:"Stabiele angina pectoris, CCS klasse II. Obstructief coronairlijden met significante LAD-stenose."},
+{trigger:"beleid",content:"Medicamenteus: ASA, statine (ophogen), bètablokker (metoprolol) of calciumantagonist, nitroglycerinespray bij aanval. Leefstijl: bewegen, mediterraan dieet, gewichtsreductie. PCI overwegen bij onvoldoende klachtencontrole ondanks optimale medicamenteuze therapie. Hartteam bij ernstig meervatslijden → CABG overwegen."}]},
+
+{opening:"Vrouw, 38 jaar, sinds maanden toenemend benauwd bij inspanning, af en toe duizelig.",category:"Longgeneeskunde / Cardiologie",hints:[
+{trigger:"anamnese",content:"Progressieve dyspnoe d'effort sinds ~6 maanden. Kon eerst nog hardlopen, nu benauwd bij één trap. Af en toe duizelig bij inspanning, éénmaal bijna-syncope. Geen orthopnoe. Geen hoest of hemoptoë. Geen VTE in voorgeschiedenis. Geen medicatie. Niet-roker."},
+{trigger:"lo",content:"BD 110/70, pols 88 regulair, saturatie 95% in rust (daalt naar 89% bij 6-minuten wandeltest). Halsvenenstuwing. Auscultatie cor: luide P2, systolische souffle tricuspidalis. Longen: geen bijgeluiden. Licht perifeer oedeem."},
+{trigger:"diagnostiek",content:"ECG: rechter-asdeviatie, tekenen van RV-belasting. X-thorax: vergrote pulmonale arteriën. NT-proBNP: 1200 pg/mL. Echo cor: verwijd RV, geschatte RVSP 65 mmHg, paradoxale septumbeweging, TAPSE verlaagd (14 mm). LV-functie normaal. CT-PA: geen longembolie. Longfunctie: normaal. Rechtshartkatheterisatie: mPAP 48 mmHg, PAWP 12 mmHg, PVR verhoogd."},
+{trigger:"diagnose",content:"Pulmonale arteriële hypertensie (PAH), WHO groep 1. Pre-capillair: mPAP verhoogd met normale wiggedruk. De lage PAWP sluit hartfalen als oorzaak uit."},
+{trigger:"beleid",content:"Verwijzing expertisecentrum PAH. Initiële combinatietherapie: PDE5-remmer (sildenafil/tadalafil) + endothelinereceptorantagonist (ambrisentan/macitentan). Diuretica bij rechtsdecompensatie. Anticonceptie (zwangerschap gecontra-indiceerd). Bij progressie: prostacyclineanalogen (IV/SC). Evaluatie voor longtransplantatie bij refractair beloop."}]},
+
+{opening:"Man, 75 jaar, sinds gisteravond drukkende pijn op de borst, vandaag nog steeds aanwezig.",category:"Cardiologie",hints:[
+{trigger:"anamnese",content:"Retrosternale druk sinds gisteravond ~22:00, wisselend in ernst maar niet weg geweest. Uitstraling naar linkerarm. Misselijk, niet gebraakt. Licht benauwd. Bekend met hypertensie (perindopril 4 mg), DM2 (metformine), hypercholesterolemie (rosuvastatine 10 mg). Geen cardiale voorgeschiedenis."},
+{trigger:"lo",content:"BD 160/95, pols 84 regulair, saturatie 96%, temp 36.6°C. Auscultatie cor: regulair, geen souffles. Auscultatie longen: basaal enkele crepitaties links. Perifeer: geen oedeem."},
+{trigger:"diagnostiek",content:"ECG: sinusritme, ST-depressie in V3-V6 (1-2 mm), geen ST-elevatie. Hs-troponine T: 320 ng/L (ref <14), stijgend bij herhaling na 3 uur naar 580 ng/L."},
+{trigger:"diagnose",content:"NSTEMI. Bij NSTEMI is er geen totale occlusie maar een subtotale stenose of instabiele plaque met trombus. Er is nog enige restflow → subendocardiale ischemie (ST-depressie) in plaats van transmurale ischemie (ST-elevatie)."},
+{trigger:"beleid",content:"Opname, telemetrie. Duale antiplaatjestherapie (aspirine + ticagrelor). Anticoagulatie (fondaparinux of LMWH). Bètablokker, statine ophogen. Coronairangiografie binnen 24 uur (early invasive strategy). PCI bij geschikte laesie. Bij ernstig meervatslijden: hartteam voor CABG. NB: anders dan bij STEMI is er tijd om lab af te wachten en de patiënt te stabiliseren."}]},
+
+{opening:"Man, 19 jaar, plots scherpe pijn rechts in de borst en benauwd, was gewoon thuis.",category:"Longgeneeskunde / Spoedeisend",hints:[
+{trigger:"anamnese",content:"Acute scherpe pijn rechts thoracaal, begonnen in rust. Benauwd. Geen trauma. Niet-roker. Geen longziekte bekend. Lang en slank postuur (193 cm, 68 kg). Geen eerdere episode. Geen koorts, geen hoest."},
+{trigger:"lo",content:"BD 120/75, pols 96, saturatie 95%, AF 20, temp 36.5°C. Inspectie: rechter thoraxhelft beweegt minder mee. Percussie: hypersonoor rechts. Auscultatie longen: sterk verminderd ademgeruis rechts, normaal links. Geen tracheaverplaatsing."},
+{trigger:"diagnostiek",content:"X-thorax: visceraal pleuralijn zichtbaar rechts met afwezige longtekening lateraal hiervan. Afstand longrand tot thoraxwand ~3 cm. Geen mediastinumshift. Past bij een matig-grote primaire spontane pneumothorax."},
+{trigger:"diagnose",content:"Primaire spontane pneumothorax rechts. Typische presentatie: jonge, lange, slanke mannen. Ontstaat door ruptuur van een subpleurale bleb aan de longapex."},
+{trigger:"beleid",content:"Bij eerste episode en niet-gespannen: aspiratie via naald (2e ICR medioclaviculairlijn) of dunne drain (Seldinger-techniek). Controle X-thorax na aspiratie. Bij onvoldoende ontplooiing: thoraxdrain. Bij recidief of aanhoudend luchtlek: VATS met blebresectie en pleurodese. Geen vliegen tot volledig ontplooid + 1 week. Duikverbod bespreken."}]}
+];
+
+function abn(k,v){const[lo,hi]=REF[k];if(v<lo)return"low";if(v>hi)return"high";return"normal";}
+
+function showTab(t){
+document.getElementById('gas-section').style.display=t==='gas'?'block':'none';
+document.getElementById('cases-section').style.display=t==='cases'?'block':'none';
+document.getElementById('tab-gas').className=t==='gas'?'active':'inactive';
+document.getElementById('tab-cases').className=t==='cases'?'active':'inactive';
+}
+
+function toggleAnswer(i){
+const el=document.getElementById('ans-'+i);
+const btn=document.getElementById('btn-'+i);
+if(el.style.display==='none'){el.style.display='block';btn.textContent='Verberg antwoord';btn.className='btn btn-filled';}
+else{el.style.display='none';btn.textContent='Toon antwoord';btn.className='btn btn-outline';}
+}
+
+const gasHTML='<p class="info">Interpreteer de bloedgas systematisch: pH → respiratoir of metabool → compensatie? De base excess (BE) staat erbij ter informatie maar is niet nodig voor de beoordeling. Bespreek het eerst samen, klik dan op "Toon antwoord".</p>'+
+GASES.map((g,i)=>{
+const vals=Object.entries(g.values).map(([k,v])=>{
+const s=abn(k,v);const cls=s==='normal'?'normal':'abn';const arrow=s==='low'?' ↓':s==='high'?' ↑':'';
+return'<div class="val-box"><div class="val-label">'+k+'</div><div class="val-num '+cls+'">'+v+arrow+'</div><div class="val-ref">'+REF_STR[k]+'</div></div>';
+}).join('');
+return'<div class="card"><div class="label">Bloedgas #'+(i+1)+'</div><p class="scenario">'+g.scenario+'</p><div class="grid">'+vals+'</div><button class="btn btn-outline" id="btn-'+i+'" onclick="toggleAnswer('+i+')">Toon antwoord</button><div class="answer-box" id="ans-'+i+'" style="display:none"><div class="answer-title">'+g.answer+'</div><p class="answer-text">'+g.explanation+'</p></div></div>';
+}).join('');
+
+const casesState=CASES.map(()=>({revealed:[]}));
+
+function revealHint(ci,hi){
+if(casesState[ci].revealed.includes(hi))return;
+casesState[ci].revealed.push(hi);
+renderCases();
+}
+function resetCase(ci){casesState[ci].revealed=[];renderCases();}
+
+function renderCases(){
+const html='<p class="info">Je krijgt alleen een openingszin. Bespreek samen wat je wilt weten en doen. Onthul informatie stap voor stap.</p>'+
+CASES.map((c,ci)=>{
+const rev=casesState[ci].revealed;
+const btns=c.hints.map((h,hi)=>{
+const isRev=rev.includes(hi);
+const prevOk=hi===0||rev.includes(hi-1);
+const style=isRev?'background:var(--accent);color:#fff;border-color:var(--accent);cursor:default':
+prevOk?'background:transparent;color:var(--accent);border-color:var(--accent);cursor:pointer':
+'background:transparent;color:var(--muted);border-color:var(--border);cursor:not-allowed;opacity:.4';
+const onclick=!isRev&&prevOk?'onclick="revealHint('+ci+','+hi+')"':isRev?'':'disabled';
+return'<button class="hint-btn" style="'+style+'" '+onclick+'>'+h.trigger+'</button>';
+}).join('');
+const hints=rev.sort((a,b)=>a-b).map(hi=>
+'<div class="hint-content"><div class="hint-label">'+c.hints[hi].trigger+'</div><p class="hint-text">'+c.hints[hi].content+'</p></div>'
+).join('');
+const reset=rev.length===c.hints.length?'<button class="btn btn-outline" style="margin-top:12px;font-size:13px;padding:8px 16px;border-color:var(--border);color:var(--muted)" onclick="resetCase('+ci+')">Reset casus</button>':'';
+const notes=rev.length>0?'<textarea class="notes" id="notes-'+ci+'" placeholder="Eigen aantekeningen / differentiaal diagnose..."></textarea>':'';
+return'<div class="card"><div class="meta"><span class="label">'+c.category+'</span><span class="counter">'+rev.length+'/'+c.hints.length+' onthuld</span></div><div class="opening">\u201c'+c.opening+'\u201d</div><p class="info" style="margin-bottom:12px">Bespreek eerst onderling wat je zou willen weten/doen. Klik dan stap voor stap:</p><div class="hint-btns">'+btns+'</div>'+hints+notes+reset+'</div>';
+}).join('');
+document.getElementById('cases-section').innerHTML=html;
+}
+
+document.getElementById('gas-section').innerHTML=gasHTML;
+renderCases();
+</script>
+</body>
+</html>
